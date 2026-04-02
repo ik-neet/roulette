@@ -415,14 +415,29 @@
     const start    = performance.now();
     const base     = rotation;
 
+    let prevRot = base;
+    let resultShown = false;
+
     function frame(now) {
       const t = Math.min((now - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - t, 16); // ease-out 16乗（後半をさらに緩やかに停止）
+      const ease = 1 - Math.pow(1 - t, 16);
       rotation = base + totalRot * ease;
+
+      const delta = Math.abs(rotation - prevRot);
+      prevRot = rotation;
       draw();
+
+      // 1フレームの移動量が閾値以下になったら結果を表示してボタンを解放
+      if (!resultShown && delta < 0.008) {
+        resultShown = true;
+        spinning = false;
+        document.getElementById('spinBtn').disabled = false;
+        showResult();
+      }
+
       if (t < 1) {
         requestAnimationFrame(frame);
-      } else {
+      } else if (!resultShown) {
         spinning = false;
         document.getElementById('spinBtn').disabled = false;
         showResult();
