@@ -48,8 +48,8 @@
 
     .wheel-wrapper {
       position: relative;
-      width: 380px;
-      height: 380px;
+      width: 520px;
+      height: 520px;
     }
 
     .wheel-pointer {
@@ -260,7 +260,8 @@
 
     @media (max-width: 640px) {
       .container { padding: 16px; gap: 16px; }
-      .wheel-wrapper { width: 300px; height: 300px; }
+      .wheel-wrapper { width: 340px; height: 340px; }
+      canvas { width: 340px !important; height: 340px !important; }
       .options-section { width: 100%; }
     }
   </style>
@@ -274,7 +275,7 @@
   <div class="wheel-section">
     <div class="wheel-wrapper">
       <div class="wheel-pointer"></div>
-      <canvas id="canvas" width="380" height="380"></canvas>
+      <canvas id="canvas" width="520" height="520"></canvas>
     </div>
     <button class="btn-spin" id="spinBtn" onclick="spin()">回 す ！</button>
   </div>
@@ -410,13 +411,13 @@
     document.getElementById('spinBtn').disabled = true;
 
     const totalRot = Math.PI * 2 * (6 + Math.random() * 6);
-    const duration = 3500 + Math.random() * 1500;
+    const duration = 6000 + Math.random() * 2000;
     const start    = performance.now();
     const base     = rotation;
 
     function frame(now) {
       const t = Math.min((now - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - t, 4); // ease-out quart
+      const ease = 1 - Math.pow(1 - t, 8); // ease-out octic（急加速→超ゆっくり停止）
       rotation = base + totalRot * ease;
       draw();
       if (t < 1) {
