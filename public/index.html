@@ -318,7 +318,6 @@
 
   let options = [];
   let rotation = 0;
-  let spinning = false;
   let editingIdx = -1;
 
   /* ---------- Storage ---------- */
@@ -405,10 +404,13 @@
   }
 
   /* ---------- Spin ---------- */
+  let rafId = null;
+
   function spin() {
-    if (spinning || options.length === 0) return;
-    spinning = true;
-    document.getElementById('spinBtn').disabled = true;
+    if (options.length === 0) return;
+
+    // 実行中のアニメーションをキャンセルして現在位置から再スタート
+    if (rafId !== null) cancelAnimationFrame(rafId);
 
     const totalRot = Math.PI * 2 * (6 + Math.random() * 4);
     const duration = 5000 + Math.random() * 2000;
@@ -421,14 +423,13 @@
       rotation = base + totalRot * ease;
       draw();
       if (t < 1) {
-        requestAnimationFrame(frame);
+        rafId = requestAnimationFrame(frame);
       } else {
-        spinning = false;
-        document.getElementById('spinBtn').disabled = false;
+        rafId = null;
         showResult();
       }
     }
-    requestAnimationFrame(frame);
+    rafId = requestAnimationFrame(frame);
   }
 
   function getResult() {
