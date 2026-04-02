@@ -212,6 +212,20 @@
     }
     .btn-reset:hover { background: #dfe6e9; }
 
+    .btn-sound {
+      padding: 10px;
+      background: #4A90E2;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-sound:hover { background: #2980b9; }
+    .btn-sound.off { background: #b2bec3; }
+    .btn-sound.off:hover { background: #95a5a6; }
+
     /* --- Result Modal --- */
     .modal-overlay {
       display: none;
@@ -293,6 +307,8 @@
     <ul class="options-list" id="optionsList"></ul>
 
     <button class="btn-reset" onclick="resetOptions()">リセット（デフォルトに戻す）</button>
+
+    <button class="btn-sound" id="soundBtn" onclick="toggleSound()">🔊 サウンド ON</button>
   </div>
 </div>
 
@@ -321,7 +337,15 @@
   let editingIdx = -1;
 
   /* ---------- Audio ---------- */
+  let soundEnabled = true;
   let audioCtx = null;
+
+  function toggleSound() {
+    soundEnabled = !soundEnabled;
+    const btn = document.getElementById('soundBtn');
+    btn.textContent = soundEnabled ? '🔊 サウンド ON' : '🔇 サウンド OFF';
+    btn.classList.toggle('off', !soundEnabled);
+  }
 
   function getAudioCtx() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -329,6 +353,7 @@
   }
 
   function playTick(speed) {
+    if (!soundEnabled) return;
     const ctx = getAudioCtx();
     const osc  = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -344,6 +369,7 @@
   }
 
   function playWin() {
+    if (!soundEnabled) return;
     const ctx = getAudioCtx();
     [523, 659, 784, 1047].forEach((freq, i) => {
       const osc  = ctx.createOscillator();
