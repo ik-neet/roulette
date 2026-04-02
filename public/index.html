@@ -428,7 +428,7 @@
       draw();
 
       // 1フレームの移動量が閾値以下になったら結果を表示してボタンを解放
-      if (!resultShown && delta < 0.1) {
+      if (!resultShown && delta < 0.08) {
         resultShown = true;
         spinning = false;
         document.getElementById('spinBtn').disabled = false;
