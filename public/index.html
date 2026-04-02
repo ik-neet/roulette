@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ルーレット</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      background: #4A90E2;
+      color: white;
+      padding: 16px 24px;
+      width: 100%;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      letter-spacing: 2px;
+    }
+
+    .container {
+      display: flex;
+      gap: 32px;
+      padding: 32px;
+      max-width: 1000px;
+      width: 100%;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* --- Wheel --- */
+    .wheel-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .wheel-wrapper {
+      position: relative;
+      width: 380px;
+      height: 380px;
+    }
+
+    .wheel-pointer {
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 14px solid transparent;
+      border-right: 14px solid transparent;
+      border-top: 34px solid #e74c3c;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+      z-index: 10;
+    }
+
+    canvas {
+      border-radius: 50%;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+    }
+
+    .btn-spin {
+      padding: 14px 48px;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(231,76,60,0.45);
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+      letter-spacing: 2px;
+    }
+    .btn-spin:hover { background: #c0392b; box-shadow: 0 6px 18px rgba(231,76,60,0.55); }
+    .btn-spin:active { transform: scale(0.97); }
+    .btn-spin:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; }
+
+    /* --- Options Panel --- */
+    .options-section {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .options-section h2 {
+      font-size: 17px;
+      color: #444;
+      border-bottom: 2px solid #f0f2f5;
+      padding-bottom: 12px;
+    }
+
+    .add-form {
+      display: flex;
+      gap: 8px;
+    }
+    .add-form input {
+      flex: 1;
+      padding: 9px 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .add-form input:focus { border-color: #4A90E2; }
+
+    .btn-add {
+      padding: 9px 16px;
+      background: #2ecc71;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-add:hover { background: #27ae60; }
+
+    .options-list {
+      list-style: none;
+      max-height: 340px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .option-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .color-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .option-label {
+      flex: 1;
+      font-size: 14px;
+      color: #333;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .option-edit-input {
+      flex: 1;
+      padding: 4px 8px;
+      border: 1px solid #aaa;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    }
+    .option-edit-input:focus { border-color: #4A90E2; }
+
+    .btn-icon {
+      padding: 4px 9px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+    .btn-edit   { background: #3498db; color: white; }
+    .btn-delete { background: #e74c3c; color: white; }
+    .btn-save   { background: #2ecc71; color: white; }
+    .btn-cancel { background: #95a5a6; color: white; }
+
+    .empty-msg {
+      text-align: center;
+      color: #bbb;
+      font-size: 13px;
+      padding: 20px 0;
+    }
+
+    .btn-reset {
+      padding: 10px;
+      background: #ecf0f1;
+      color: #555;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-reset:hover { background: #dfe6e9; }
+
+    /* --- Result Modal --- */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-overlay.show { display: flex; }
+
+    .modal-box {
+      background: white;
+      border-radius: 20px;
+      padding: 48px 56px;
+      text-align: center;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.4); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    .modal-label { font-size: 15px; color: #888; margin-bottom: 10px; }
+    .modal-result {
+      font-size: 38px;
+      font-weight: bold;
+      color: #e74c3c;
+      margin-bottom: 28px;
+      word-break: break-all;
+      max-width: 320px;
+    }
+    .btn-close {
+      padding: 12px 40px;
+      background: #4A90E2;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .btn-close:hover { background: #2980b9; }
+
+    @media (max-width: 640px) {
+      .container { padding: 16px; gap: 16px; }
+      .wheel-wrapper { width: 300px; height: 300px; }
+      .options-section { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<header>ルーレット</header>
+
+<div class="container">
+  <!-- Wheel -->
+  <div class="wheel-section">
+    <div class="wheel-wrapper">
+      <div class="wheel-pointer"></div>
+      <canvas id="canvas" width="380" height="380"></canvas>
+    </div>
+    <button class="btn-spin" id="spinBtn" onclick="spin()">回 す ！</button>
+  </div>
+
+  <!-- Options -->
+  <div class="options-section">
+    <h2>選択肢の管理</h2>
+
+    <div class="add-form">
+      <input type="text" id="newInput" placeholder="新しい選択肢を入力..."
+             onkeydown="if(event.key==='Enter') addOption()">
+      <button class="btn-add" onclick="addOption()">追加</button>
+    </div>
+
+    <ul class="options-list" id="optionsList"></ul>
+
+    <button class="btn-reset" onclick="resetOptions()">リセット（デフォルトに戻す）</button>
+  </div>
+</div>
+
+<!-- Result Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-label">結果</div>
+    <div class="modal-result" id="modalResult"></div>
+    <button class="btn-close" onclick="closeModal()">閉じる</button>
+  </div>
+</div>
+
+<script>
+  const COLORS = [
+    '#FF6B6B','#4ECDC4','#45B7D1','#96CEB4',
+    '#FFEAA7','#DDA0DD','#98D8C8','#F7DC6F',
+    '#FFA07A','#87CEEB','#98FB98','#DEB887',
+    '#FF8C69','#00CED1','#9370DB','#32CD32'
+  ];
+
+  const DEFAULT_OPTIONS = ['選択肢A','選択肢B','選択肢C','選択肢D'];
+  const STORAGE_KEY = 'rouletteOptions';
+
+  let options = [];
+  let rotation = 0;
+  let spinning = false;
+  let editingIdx = -1;
+
+  /* ---------- Storage ---------- */
+  function load() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      options = saved ? JSON.parse(saved) : [...DEFAULT_OPTIONS];
+    } catch { options = [...DEFAULT_OPTIONS]; }
+  }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(options));
+  }
+
+  /* ---------- Draw ---------- */
+  function draw() {
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const r  = Math.min(cx, cy) - 8;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (options.length === 0) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#eee';
+      ctx.fill();
+      ctx.fillStyle = '#aaa';
+      ctx.font = '15px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('選択肢を追加してください', cx, cy);
+      return;
+    }
+
+    const seg = (Math.PI * 2) / options.length;
+
+    options.forEach((opt, i) => {
+      const start = rotation + i * seg - Math.PI / 2;
+      const end   = start + seg;
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, start, end);
+      ctx.closePath();
+      ctx.fillStyle = COLORS[i % COLORS.length];
+      ctx.fill();
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Label
+      const mid = start + seg / 2;
+      const tr  = r * 0.62;
+      const tx  = cx + tr * Math.cos(mid);
+      const ty  = cy + tr * Math.sin(mid);
+
+      ctx.save();
+      ctx.translate(tx, ty);
+      ctx.rotate(mid + Math.PI / 2);
+      const fs = Math.min(16, Math.max(9, 180 / options.length + 6));
+      ctx.font = `bold ${fs}px 'Hiragino Sans', sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'white';
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
+      ctx.shadowBlur = 4;
+      const max = options.length > 10 ? 5 : 8;
+      const label = opt.length > max ? opt.slice(0, max) + '…' : opt;
+      ctx.fillText(label, 0, 0);
+      ctx.restore();
+    });
+
+    // Center pin
+    ctx.beginPath();
+    ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+    ctx.fillStyle = 'white';
+    ctx.fill();
+    ctx.strokeStyle = '#ddd';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  /* ---------- Spin ---------- */
+  function spin() {
+    if (spinning || options.length === 0) return;
+    spinning = true;
+    document.getElementById('spinBtn').disabled = true;
+
+    const totalRot = Math.PI * 2 * (6 + Math.random() * 6);
+    const duration = 3500 + Math.random() * 1500;
+    const start    = performance.now();
+    const base     = rotation;
+
+    function frame(now) {
+      const t = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 4); // ease-out quart
+      rotation = base + totalRot * ease;
+      draw();
+      if (t < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        spinning = false;
+        document.getElementById('spinBtn').disabled = false;
+        showResult();
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function getResult() {
+    const seg = (Math.PI * 2) / options.length;
+    // Normalize rotation to [0, 2PI)
+    const norm = ((-rotation) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    const idx  = Math.floor(norm / seg) % options.length;
+    return options[idx];
+  }
+
+  function showResult() {
+    document.getElementById('modalResult').textContent = getResult();
+    document.getElementById('modal').classList.add('show');
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('show');
+  }
+
+  /* ---------- List ---------- */
+  function render() {
+    const ul = document.getElementById('optionsList');
+    ul.innerHTML = '';
+
+    if (options.length === 0) {
+      ul.innerHTML = '<li class="empty-msg">選択肢がありません</li>';
+      return;
+    }
+
+    options.forEach((opt, i) => {
+      const li = document.createElement('li');
+      li.className = 'option-item';
+
+      const dot = document.createElement('div');
+      dot.className = 'color-dot';
+      dot.style.background = COLORS[i % COLORS.length];
+      li.appendChild(dot);
+
+      if (editingIdx === i) {
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.className = 'option-edit-input';
+        inp.value = opt;
+        inp.id = `ei${i}`;
+        inp.onkeydown = e => {
+          if (e.key === 'Enter')  saveEdit(i);
+          if (e.key === 'Escape') cancelEdit();
+        };
+        li.appendChild(inp);
+
+        const sv = document.createElement('button');
+        sv.className = 'btn-icon btn-save';
+        sv.textContent = '保存';
+        sv.onclick = () => saveEdit(i);
+        li.appendChild(sv);
+
+        const cl = document.createElement('button');
+        cl.className = 'btn-icon btn-cancel';
+        cl.textContent = 'キャンセル';
+        cl.onclick = cancelEdit;
+        li.appendChild(cl);
+
+        setTimeout(() => inp.focus(), 0);
+      } else {
+        const sp = document.createElement('span');
+        sp.className = 'option-label';
+        sp.textContent = opt;
+        li.appendChild(sp);
+
+        const ed = document.createElement('button');
+        ed.className = 'btn-icon btn-edit';
+        ed.textContent = '編集';
+        ed.onclick = () => { editingIdx = i; render(); };
+        li.appendChild(ed);
+
+        const dl = document.createElement('button');
+        dl.className = 'btn-icon btn-delete';
+        dl.textContent = '削除';
+        dl.onclick = () => { options.splice(i, 1); if (editingIdx === i) editingIdx = -1; save(); render(); draw(); };
+        li.appendChild(dl);
+      }
+
+      ul.appendChild(li);
+    });
+  }
+
+  function addOption() {
+    const inp = document.getElementById('newInput');
+    const val = inp.value.trim();
+    if (!val) return;
+    options.push(val);
+    save();
+    inp.value = '';
+    render();
+    draw();
+  }
+
+  function saveEdit(i) {
+    const inp = document.getElementById(`ei${i}`);
+    const val = inp ? inp.value.trim() : '';
+    if (val) { options[i] = val; save(); }
+    editingIdx = -1;
+    render();
+    draw();
+  }
+
+  function cancelEdit() {
+    editingIdx = -1;
+    render();
+  }
+
+  function resetOptions() {
+    if (!confirm('選択肢をデフォルトに戻しますか？')) return;
+    options = [...DEFAULT_OPTIONS];
+    save();
+    editingIdx = -1;
+    rotation = 0;
+    render();
+    draw();
+  }
+
+  /* ---------- Init ---------- */
+  load();
+  render();
+  draw();
+</script>
+</body>
+</html>
