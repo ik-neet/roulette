@@ -320,6 +320,46 @@
   let rotation = 0;
   let editingIdx = -1;
 
+  /* ---------- Audio ---------- */
+  let audioCtx = null;
+
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function playTick(speed) {
+    const ctx = getAudioCtx();
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    // 速いほど高い音
+    osc.frequency.value = 600 + speed * 80;
+    osc.type = 'triangle';
+    gain.gain.setValueAtTime(0.25, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.04);
+  }
+
+  function playWin() {
+    const ctx = getAudioCtx();
+    [523, 659, 784, 1047].forEach((freq, i) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      const t = ctx.currentTime + i * 0.14;
+      gain.gain.setValueAtTime(0.28, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      osc.start(t);
+      osc.stop(t + 0.35);
+    });
+  }
+
   /* ---------- Storage ---------- */
   function load() {
     try {
@@ -416,12 +456,23 @@
     const duration = 5000 + Math.random() * 2000;
     const start    = performance.now();
     const base     = rotation;
+    const seg      = options.length > 0 ? (Math.PI * 2) / options.length : Math.PI * 2;
+    let lastSegIdx = Math.floor(((-base % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2)) / seg);
 
     function frame(now) {
-      const t = Math.min((now - start) / duration, 1);
+      const t    = Math.min((now - start) / duration, 1);
       const ease = 1 - Math.pow(1 - t, 4);
-      rotation = base + totalRot * ease;
+      rotation   = base + totalRot * ease;
       draw();
+
+      // セグメント通過でカチカチ音（速度に応じて音程変化）
+      const curSegIdx = Math.floor(((-rotation % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2)) / seg);
+      if (curSegIdx !== lastSegIdx) {
+        const speed = Math.min((totalRot / duration) * (1 - t) * 3, 5); // 残速を0-5に正規化
+        playTick(speed);
+        lastSegIdx = curSegIdx;
+      }
+
       if (t < 1) {
         rafId = requestAnimationFrame(frame);
       } else {
@@ -443,6 +494,7 @@
   function showResult() {
     document.getElementById('modalResult').textContent = getResult();
     document.getElementById('modal').classList.add('show');
+    playWin();
   }
 
   function closeModal() {
